@@ -32,7 +32,12 @@ void CamCapture::displayVideo(){
 
 		cvShowImage ("People Counter 'Camera Feed'", mFrame);
 		//exit if esc is pressed
-		if( (cvWaitKey(1) & 255 == 27) ) break;
+		if( ((cvWaitKey(1) & 255) == 27) ){
+			cvReleaseCapture (&mCamCapture);
+			cvReleaseImage(&mFrame);
+			cvDestroyWindow("People Counter 'Camera Feed'");
+			break;
+		}
 	}
 }
 
