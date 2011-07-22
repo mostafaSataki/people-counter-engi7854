@@ -29,9 +29,6 @@ int main(){
 }
 
 int workerFunc(){
-	CvFont font;
-	cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
-
 	using namespace cv;
     VideoCapture cap(0) ; // open the default camera
     if(!cap.isOpened())  // check if we succeeded
@@ -47,7 +44,10 @@ int workerFunc(){
         GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);
         Canny(edges, edges, 0, 30, 3);
 
-        putText(edges, "Hello World!", cvPoint(10, 130), &font, cvScalar(255, 255, 255), 0 , 0 , true);
+        double currentFPS = 12;//= cap.get(CV_CAP_PROP_FPS);
+        std::cout << currentFPS;
+        std::string str = boost::lexical_cast<std::string>(currentFPS);
+        putText(edges, str, cvPoint(10, 130), FONT_HERSHEY_PLAIN,1, cvScalar(255, 255, 255,0),1,CV_AA,true);
         imshow("edges", edges);
         if(((cvWaitKey(1) & 255) == 27)){
         	cvDestroyWindow("edges");
