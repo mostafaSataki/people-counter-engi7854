@@ -44,7 +44,7 @@ int workerFunc(){
         GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);
         Canny(edges, edges, 0, 30, 3);
 
-        double currentFPS = 12;//= cap.get(CV_CAP_PROP_FPS);
+        double currentFPS = cap.get(CV_CAP_PROP_FPS);
         std::cout << currentFPS;
         std::string str = boost::lexical_cast<std::string>(currentFPS);
         putText(edges, str, cvPoint(10, 130), FONT_HERSHEY_PLAIN,1, cvScalar(255, 255, 255,0),1,CV_AA,true);
@@ -54,7 +54,6 @@ int workerFunc(){
         	break;
         }
     }
-    // the camera will be deinitialized automatically in VideoCapture destructor
     return 0;
 }
 
