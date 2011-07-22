@@ -23,7 +23,7 @@ public:
 	~FrameHandler(){};
 
 	//max queuesize
-	static const int MAX_QUEUE_SIZE = 100;
+	static const int MAX_QUEUE_SIZE = 2;
 
 	//Get first frame from the current Read List
 	Mat getFrame();

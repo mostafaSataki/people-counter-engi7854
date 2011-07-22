@@ -19,12 +19,12 @@
 
 using namespace std;
 bool ready;
+FrameHandler *mFrameHandler = new FrameHandler();
 int workerFunc(FrameHandler* fHandler);
 int main(){
 	ready = false;
-	FrameHandler *mFrameHandler = new FrameHandler();
-	boost::thread workerThread(workerFunc, mFrameHandler);
-	workerThread.join();
+
+	boost::thread workerThread(workerFunc, mFrameHandler);;
 	namedWindow("buffer");
 	for(;;)
 	{

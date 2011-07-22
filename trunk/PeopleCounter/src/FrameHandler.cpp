@@ -56,7 +56,6 @@ Mat FrameHandler::getFrame(){
 			tmp = (mBufferA.front());
 			mBufferA.pop();
 			std::cout << "reading from A\n";
-			return tmp;
 		}
 	}
 	else{// if reading from bufferB
@@ -64,12 +63,12 @@ Mat FrameHandler::getFrame(){
 			tmp = (mBufferB.front());
 			mBufferB.pop();
 			std::cout << "reading from B\n";
-			return tmp;
 		}
 		else{
 			std::cout << "nothing to read\n";
 		}
 	}
+	return tmp;
 }
 
 void FrameHandler::clearQueue(queue<Mat> &q){
