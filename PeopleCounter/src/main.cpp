@@ -4,41 +4,34 @@
  *  Created on: 2011-07-20
  *      Author: Justin
  */
+#define BOOST_THREAD_USE_LIB
 
 #include <cv.h>
 #include <highgui.h>
 #include <stdio.h>
 #include "CamCapture.h"
 #include <iostream>
-#include "windows.h"
 #include "ProcessedVideo.h"
 #include "CamCapture.h"
 #include <boost/thread.hpp>
 #include <boost/date_time.hpp>
 
-//class ProcessedVideo;
-//class CamCapture;
 
 using namespace std;
 
-DWORD WINAPI ThreadFn(LPVOID vpParam);
-bool done;
+int workerFunc();
 int main(){
-
-	done = false;
-	//create a thread
-	unsigned int uiCounter = 0;
-	DWORD qThreadID;
-	// uiCounter is the paramter that can be passed into the thread upon execution if needed
-	HANDLE hThread = CreateThread(0,0,ThreadFn,&uiCounter,0,&qThreadID);
+	boost::thread workerThread(workerFunc);
 
 	CamCapture *camera = new CamCapture();
 	camera->displayVideo();
-	CloseHandle(hThread);
 	return 0;
 }
 
-DWORD WINAPI ThreadFn(LPVOID vpParam){
+int workerFunc(){
+	CvFont font;
+	cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.0, 1.0, 0, 1, CV_AA);
+
 	using namespace cv;
     VideoCapture cap(0) ; // open the default camera
     if(!cap.isOpened())  // check if we succeeded
@@ -54,6 +47,7 @@ DWORD WINAPI ThreadFn(LPVOID vpParam){
         GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);
         Canny(edges, edges, 0, 30, 3);
 
+        putText(edges, "Hello World!", cvPoint(10, 130), &font, cvScalar(255, 255, 255), 0 , 0 , true);
         imshow("edges", edges);
         if(((cvWaitKey(1) & 255) == 27)){
         	cvDestroyWindow("edges");
