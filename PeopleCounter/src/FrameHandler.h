@@ -37,6 +37,8 @@ public:
 	//flase cooresponds mBufferB is the Write List
 	bool mReadFromA;
 
+	bool threadReady;
+
 private:
 
 	queue<Mat> mBufferA;
@@ -52,6 +54,7 @@ private:
 
 	//clears the queue;
 	void clearQueue(queue<Mat> &q);
+	Mat tmp;
 
 
 };
