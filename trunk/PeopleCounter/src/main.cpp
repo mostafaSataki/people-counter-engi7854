@@ -16,27 +16,28 @@
 #include "FrameHandler.h"
 #include <boost/thread.hpp>
 #include <boost/date_time.hpp>
+using namespace cv;
 
 using namespace std;
-bool ready;
 FrameHandler *mFrameHandler = new FrameHandler();
 int workerFunc(FrameHandler* fHandler);
 int main(){
-	ready = false;
-
-	boost::thread workerThread(workerFunc, mFrameHandler);;
 	namedWindow("buffer");
+	boost::thread workerThread(workerFunc, mFrameHandler);;
+	cvWaitKey(500);
 	for(;;)
 	{
-		if(ready){
+		if(mFrameHandler->threadReady){
 			if(mFrameHandler->getFrame().rows <= 0){
-				cout << "CANNOT LOAD FROM BUFFER\n";
+				//cout << "No Frame\n";
 			}else{
 				imshow("buffer", mFrameHandler->getFrame());
 			}
 		}else{
-			//std::cout<<"not ready!\n";
+			std::cout<<"waiting....\n";
 		}
+
+
 		if(((cvWaitKey(1) & 255) == 27)){
 			cvDestroyWindow("edges");
 			return 0;
@@ -48,13 +49,14 @@ int main(){
 
 int workerFunc(FrameHandler* fHandler){
 
-	using namespace cv;
-	VideoCapture cap(0) ; // open the default camera
+
+	VideoCapture cap(0);
+	//Mat edges;
+	namedWindow("edges",1); ; // open the default camera
 	if(!cap.isOpened())  // check if we succeeded
 		return -1;
 
-	//Mat edges;
-	namedWindow("edges",1);
+
 	for(;;)
 	{
 		Mat frame;
@@ -63,12 +65,9 @@ int workerFunc(FrameHandler* fHandler){
 			cout << "NO FRAME!\n" ;
 		}
 		else{
-			imshow("edges", frame);
 			fHandler->saveFrame(frame);
-		}
+			imshow("edges", frame);
 
-		if(!ready && fHandler->mReadFromA){
-			ready = true;
 		}
 		if(((cvWaitKey(1) & 255) == 27)){
 			cvDestroyWindow("edges");
