@@ -23,7 +23,7 @@ public:
 	~FrameHandler(){};
 
 	//max queuesize
-	static const int MAX_QUEUE_SIZE = 10;
+	static const int MAX_QUEUE_SIZE = 100;
 
 	//Get first frame from the current Read List
 	Mat getFrame();
@@ -33,14 +33,14 @@ public:
 	//empties both buffers
 	void clearBufferLists();
 
+	//true cooresponds mBufferA is the Write List
+	//flase cooresponds mBufferB is the Write List
+	bool mReadFromA;
+
 private:
 
 	queue<Mat> mBufferA;
 	queue<Mat> mBufferB;
-
-	//true cooresponds mBufferA is the Write List
-	//flase cooresponds mBufferB is the Write List
-	bool mWriteBuffer;
 
 	// true means READ from A
 	// false means READ from B

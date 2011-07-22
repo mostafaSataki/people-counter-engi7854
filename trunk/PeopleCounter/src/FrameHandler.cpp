@@ -9,56 +9,66 @@
 #include <highgui.h>
 #include <cv.h>
 #include "FrameHandler.h"
+#include <iostream>
 
 using namespace cv;
 using namespace std;
 
 FrameHandler::FrameHandler(){
-	mWriteBuffer = true;
+	mReadFromA = false;
 }
 
 void FrameHandler::saveFrame(Mat newFrame){
-	if(getWriteBuffer()){
+	if(!mReadFromA){
 		//if the buffer is full before a write, clear the buffer
-		if((int)mBufferA.size() == MAX_QUEUE_SIZE ){
-			clearQueue(mBufferA);
-		}
+		//		if((int)mBufferA.size() == MAX_QUEUE_SIZE ){
+		//			clearQueue(mBufferA);
+		//		}
 		//add new frame to the queue
 		mBufferA.push(newFrame);
+		std::cout << "writing to A\n";
 
 		// if the queue is full after adding. switch to the next buffer
 		if((int)mBufferA.size() == MAX_QUEUE_SIZE){
-			mWriteBuffer=false;
+			mReadFromA=true;
 		}
 	}
 	else{ // if writing to buffer B
 		//if the buffer is full before a write, clear the buffer
-		if((int)mBufferB.size() == MAX_QUEUE_SIZE ){
-			clearQueue(mBufferB);
-		}
+		//		if((int)mBufferB.size() == MAX_QUEUE_SIZE ){
+		//			clearQueue(mBufferB);
+		//		}
 		//add the new frame to queue
 		mBufferB.push(newFrame);
+		std::cout << "writing to B\n";
 
 		// if the queue is full after adding. switch to the next buffer
 		if((int)mBufferB.size() == MAX_QUEUE_SIZE){
-			mWriteBuffer =true;
+			mReadFromA =false;
 		}
 	}
 }
 
 Mat FrameHandler::getFrame(){
-
-	if(getReadBuffer()){ // if reading from bufferA
-		Mat tmp;
-		tmp = (mBufferA.front());
-		mBufferA.pop();
-		return tmp;
+	Mat tmp;
+	if(mReadFromA){
+		if(mBufferA.size() != 0){ // if reading from bufferA
+			tmp = (mBufferA.front());
+			mBufferA.pop();
+			std::cout << "reading from A\n";
+			return tmp;
+		}
 	}
 	else{// if reading from bufferB
-		Mat tmp;
-		tmp = (mBufferB.front());
-		mBufferB.pop();
-		return tmp;
+		if(mBufferB.size() != 0){
+			tmp = (mBufferB.front());
+			mBufferB.pop();
+			std::cout << "reading from B\n";
+			return tmp;
+		}
+		else{
+			std::cout << "nothing to read\n";
+		}
 	}
 }
 
@@ -68,9 +78,9 @@ void FrameHandler::clearQueue(queue<Mat> &q){
 }
 
 bool FrameHandler::getReadBuffer(){
-	return !mWriteBuffer;
+	return true;
 }
 
 bool FrameHandler::getWriteBuffer(){
-	return mWriteBuffer;
+	return mReadFromA;
 }
