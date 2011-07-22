@@ -13,6 +13,8 @@
 #include "windows.h"
 #include "ProcessedVideo.h"
 #include "CamCapture.h"
+#include <boost/thread.hpp>
+#include <boost/date_time.hpp>
 
 //class ProcessedVideo;
 //class CamCapture;
@@ -37,10 +39,29 @@ int main(){
 }
 
 DWORD WINAPI ThreadFn(LPVOID vpParam){
-	//anything to be performed in the second thread goes in here
-	ProcessedVideo *pVideo = new ProcessedVideo();
-	pVideo->displayVideo();
-	return 0;
+	using namespace cv;
+    VideoCapture cap(0) ; // open the default camera
+    if(!cap.isOpened())  // check if we succeeded
+        return -1;
+
+    Mat edges;
+    namedWindow("edges",1);
+    for(;;)
+    {
+        Mat frame;
+        cap >> frame; // get a new frame from camera
+        cvtColor(frame, edges, CV_BGR2GRAY);
+        GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);
+        Canny(edges, edges, 0, 30, 3);
+
+        imshow("edges", edges);
+        if(((cvWaitKey(1) & 255) == 27)){
+        	cvDestroyWindow("edges");
+        	break;
+        }
+    }
+    // the camera will be deinitialized automatically in VideoCapture destructor
+    return 0;
 }
 
 
