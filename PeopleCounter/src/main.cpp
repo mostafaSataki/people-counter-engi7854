@@ -13,48 +13,69 @@
 #include <iostream>
 #include "ProcessedVideo.h"
 #include "CamCapture.h"
+#include "FrameHandler.h"
 #include <boost/thread.hpp>
 #include <boost/date_time.hpp>
 
-
 using namespace std;
-
-int workerFunc();
+bool ready;
+int workerFunc(FrameHandler* fHandler);
 int main(){
-	boost::thread workerThread(workerFunc);
-
-	CamCapture *camera = new CamCapture();
-	camera->displayVideo();
+	ready = false;
+	FrameHandler *mFrameHandler = new FrameHandler();
+	boost::thread workerThread(workerFunc, mFrameHandler);
+	workerThread.join();
+	namedWindow("buffer");
+	for(;;)
+	{
+		if(ready){
+			if(mFrameHandler->getFrame().rows <= 0){
+				cout << "CANNOT LOAD FROM BUFFER\n";
+			}else{
+				imshow("buffer", mFrameHandler->getFrame());
+			}
+		}else{
+			//std::cout<<"not ready!\n";
+		}
+		if(((cvWaitKey(1) & 255) == 27)){
+			cvDestroyWindow("edges");
+			return 0;
+		}
+	}
 	return 0;
 }
 
-int workerFunc(){
+
+int workerFunc(FrameHandler* fHandler){
+
 	using namespace cv;
-    VideoCapture cap(0) ; // open the default camera
-    if(!cap.isOpened())  // check if we succeeded
-        return -1;
+	VideoCapture cap(0) ; // open the default camera
+	if(!cap.isOpened())  // check if we succeeded
+		return -1;
 
-    Mat edges;
-    namedWindow("edges",1);
-    for(;;)
-    {
-        Mat frame;
-        cap >> frame; // get a new frame from camera
-        cvtColor(frame, edges, CV_BGR2GRAY);
-        GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);
-        Canny(edges, edges, 0, 30, 3);
+	//Mat edges;
+	namedWindow("edges",1);
+	for(;;)
+	{
+		Mat frame;
+		cap >> frame; // get a new frame from camera
+		if(frame.size <= 0){
+			cout << "NO FRAME!\n" ;
+		}
+		else{
+			imshow("edges", frame);
+			fHandler->saveFrame(frame);
+		}
 
-        double currentFPS = cap.get(CV_CAP_PROP_FPS);
-        std::cout << currentFPS;
-        std::string str = boost::lexical_cast<std::string>(currentFPS);
-        putText(edges, str, cvPoint(10, 130), FONT_HERSHEY_PLAIN,1, cvScalar(255, 255, 255,0),1,CV_AA,true);
-        imshow("edges", edges);
-        if(((cvWaitKey(1) & 255) == 27)){
-        	cvDestroyWindow("edges");
-        	break;
-        }
-    }
-    return 0;
+		if(!ready && fHandler->mReadFromA){
+			ready = true;
+		}
+		if(((cvWaitKey(1) & 255) == 27)){
+			cvDestroyWindow("edges");
+			return 0;
+		}
+	}
+	return 0;
 }
 
 
