@@ -50,7 +50,7 @@ int main(){
 
 	//CvHistogram* hists[10];
 	CvHistogram* hist = NULL;
-	CvHistogram* bg_hist = cvCreateHist(2, hist_size, CV_HIST_ARRAY, ranges, 1);
+	CvHistogram* bg_hist = NULL;
 	CvHistogram* prev_hist = NULL;
 	CvHistogram* prev_prev_hist = NULL;
 
@@ -97,7 +97,7 @@ int main(){
 			if( (correl > 0.96) && (chi < 0.04 ) && (inter > 0.96 ) && (batt <0.04 ) &&
 					(correl2 > 0.96) && (chi2 < 0.04 ) && (inter2 > 0.96 ) && (batt2 <0.04 )){
 				std::cout<<frame_count<<"\n";
-				cvCopyHist(hist,&bg_hist);
+				bg_hist = hist;
 				cvShowImage("BGHist",hist_img);
 			}
 		}
