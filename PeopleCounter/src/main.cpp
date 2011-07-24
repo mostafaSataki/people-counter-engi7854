@@ -24,7 +24,6 @@ int main(){
 	cvNamedWindow("BGHist", CV_WINDOW_AUTOSIZE);
 	cvNamedWindow("StockHist", CV_WINDOW_AUTOSIZE);
 	std::string filename = "";
-	//CvCapture *fc = cvCaptureFromCAM(-1);
 	//cin >> filename;
 	filename = "video6.avi";
 	CvCapture *fc = cvCreateFileCapture(filename.c_str());
@@ -51,7 +50,7 @@ int main(){
 
 	//CvHistogram* hists[10];
 	CvHistogram* hist = NULL;
-	CvHistogram* bg_hist = NULL;
+	CvHistogram* bg_hist = cvCreateHist(2, hist_size, CV_HIST_ARRAY, ranges, 1);
 	CvHistogram* prev_hist = NULL;
 	CvHistogram* prev_prev_hist = NULL;
 
@@ -110,8 +109,18 @@ int main(){
 		char c = cvWaitKey(66);
 		if (c == 27) {
 			cvReleaseImage(&frame);
+			cvReleaseImage(&hsv);
+			cvReleaseImage(&h_plane);
+			cvReleaseImage(&s_plane);
+			cvReleaseImage(&v_plane);
+			//cvReleaseImage(&planes);
+			cvReleaseImage(&hist_img);
+			cvReleaseHist(&hist);
+			cvReleaseHist(&bg_hist);
 			cvReleaseCapture(&fc);
-			cvDestroyWindow("in");
+			cvDestroyWindow("Stock");
+			cvDestroyWindow("BGHist");
+			cvDestroyWindow("StockHist");
 			return 0;
 		}
 	}
