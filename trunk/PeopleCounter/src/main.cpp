@@ -9,11 +9,7 @@
 #include <cv.h>
 #include <highgui.h>
 #include <stdio.h>
-#include "CamCapture.h"
 #include <iostream>
-#include "ProcessedVideo.h"
-#include "CamCapture.h"
-#include "FrameHandler.h"
 #include <string>
 #include <sstream>
 #include <cstring>
