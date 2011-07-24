@@ -85,7 +85,7 @@ int main(){
 
 		cvShowImage("Stock", frame);
 		if(frame_count >= 3 && frame_count <= 100){
-			prev_prev_hist = prev_hist;
+			cvCopyHist(prev_hist,&prev_prev_hist);
 			double correl = cvCompareHist(hist,prev_hist,CV_COMP_CORREL);
 			double chi = cvCompareHist(hist,prev_hist,CV_COMP_CHISQR);
 			double inter = cvCompareHist(hist,prev_hist,CV_COMP_INTERSECT);
@@ -96,12 +96,11 @@ int main(){
 			double batt2 = cvCompareHist(hist,prev_prev_hist,CV_COMP_BHATTACHARYYA);
 			if( (correl > 0.96) && (chi < 0.04 ) && (inter > 0.96 ) && (batt <0.04 ) &&
 					(correl2 > 0.96) && (chi2 < 0.04 ) && (inter2 > 0.96 ) && (batt2 <0.04 )){
-				std::cout<<frame_count<<"\n";
-				bg_hist = hist;
+				cvCopyHist(hist,&bg_hist);
 				cvShowImage("BGHist",hist_img);
 			}
 		}
-		prev_hist = hist;
+		cvCopyHist(hist,&prev_hist);
 
 		cvShowImage("StockHist", hist_img);
 
