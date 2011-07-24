@@ -41,6 +41,12 @@ int main(){
 	IplImage* h_plane = cvCreateImage(cvGetSize(frame), IPL_DEPTH_8U, 1);
 	IplImage* s_plane = cvCreateImage(cvGetSize(frame), IPL_DEPTH_8U, 1);
 	IplImage* v_plane = cvCreateImage(cvGetSize(frame), IPL_DEPTH_8U, 1);
+	IplImage* grey_frame = cvCreateImage(cvGetSize(frame), IPL_DEPTH_8U, 1);
+	IplImage* back_frame = cvCreateImage(cvGetSize(frame), IPL_DEPTH_8U, 1);
+	IplImage* c_frame = cvCreateImage(cvGetSize(frame), IPL_DEPTH_8U, 1);
+	IplImage* d_frame = cvCreateImage(cvGetSize(frame), IPL_DEPTH_8U, 1);
+	IplImage* e_frame = cvCreateImage(cvGetSize(frame), IPL_DEPTH_8U, 1);
+	IplImage* f_frame = cvCreateImage(cvGetSize(frame), IPL_DEPTH_8U, 1);
 	IplImage* planes[] = {h_plane, s_plane};
 	IplImage* hist_img;
 	int scale = 10;
@@ -83,7 +89,22 @@ int main(){
 			}
 		}
 
-		cvShowImage("Stock", frame);
+		cvCvtColor( frame, grey_frame, CV_BGR2GRAY );
+		cvSmooth(grey_frame, grey_frame, CV_GAUSSIAN, 5,5);
+		// random stuff i was messing with
+//		CvMemStorage* storage = cvCreateMemStorage(0);
+//		CvSeq* results = cvHoughCircles(grey_frame,storage,CV_HOUGH_GRADIENT,2,20,100,300,2,150);
+//
+//		for(int i = 0; i<results->total; i++){
+//			float* p = (float*)cvGetSeqElem(results,i);
+//			CvPoint pt = cvPoint(cvRound(p[0]) , cvRound(p[1]));
+//			cvCircle(grey_frame,pt,cvRound(p[2]), CV_RGB(0xff,0xff,0xff));
+//		}
+//
+//		//cvCanny(grey_frame,c_frame,20,255);
+
+
+		// find a static background
 		if(frame_count >= 3 && frame_count <= 100){
 			cvCopyHist(prev_hist,&prev_prev_hist);
 			double correl = cvCompareHist(hist,prev_hist,CV_COMP_CORREL);
@@ -98,11 +119,18 @@ int main(){
 					(correl2 > 0.96) && (chi2 < 0.04 ) && (inter2 > 0.96 ) && (batt2 <0.04 )){
 				cvCopyHist(hist,&bg_hist);
 				cvShowImage("BGHist",hist_img);
+				back_frame = cvCloneImage(grey_frame);
 			}
 		}
 		cvCopyHist(hist,&prev_hist);
+		cvAbsDiff(grey_frame,back_frame,c_frame);
+		cvAbsDiff(c_frame,d_frame,e_frame);
+		cvThreshold(e_frame,e_frame,25,255,CV_THRESH_BINARY);
+		cvCanny(e_frame,f_frame,1,10,3);
 
+		cvShowImage("Stock", f_frame);
 		cvShowImage("StockHist", hist_img);
+		d_frame = cvCloneImage(c_frame);
 
 		frame_count++;
 		char c = cvWaitKey(66);
