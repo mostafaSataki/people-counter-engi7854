@@ -4,10 +4,18 @@
  *  Created on: 2011-07-20
  *      Author: Justin
  */
+#define BOOST_THREAD_USE_LIB
 
 #include <cv.h>
 #include <highgui.h>
 #include <cvaux.h>
+#include <imgproc/imgproc.hpp>
+#include <stdio.h>
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <cstring>
+
 
 using namespace cv;
 
@@ -93,6 +101,15 @@ int main(){
 		cvCvtColor(difference, greyImg, CV_RGB2GRAY);
 
 		cvThreshold(greyImg, greyImg, 38, 255, CV_THRESH_BINARY);
+		//cvShowImage("Threshold", greyImg);
+		cvErode(greyImg, greyImg, 0, 6);//6
+		//cvShowImage("Erode 1", greyImg );
+		cvDilate(greyImg, greyImg, 0, 26);//33
+		//cvShowImage("Dialate ", greyImg );
+		cvErode(greyImg, greyImg, 0, 18);//6
+		//cvShowImage("Grey Image", greyImg);
+		cvDilate(greyImg, greyImg, 0, 2);
+
 
 
 		//cvShowImage("Threshold", greyImg);
