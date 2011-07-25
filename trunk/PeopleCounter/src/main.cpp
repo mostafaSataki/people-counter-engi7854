@@ -20,11 +20,14 @@ using namespace cv;
 using namespace std;
 
 int main(){
-	cvNamedWindow("Stock", CV_WINDOW_AUTOSIZE);
+	cvNamedWindow("Grey Image", CV_WINDOW_AUTOSIZE);
+	cvNamedWindow("Threshold", CV_WINDOW_AUTOSIZE);
+	cvNamedWindow("Erode 1", CV_WINDOW_AUTOSIZE);
+	cvNamedWindow("Dialate ", CV_WINDOW_AUTOSIZE);
 	cvNamedWindow("Modified", CV_WINDOW_AUTOSIZE);
 	std::string filename = "";
 	//cin >> filename;
-	filename = "video4.avi";
+	filename = "video6.avi";
 	CvCapture *fc = cvCreateFileCapture(filename.c_str());
 
 	if(!fc)
@@ -52,6 +55,7 @@ int main(){
 
 	while((frame = cvQueryFrame(fc)) != NULL){
 
+		cvWaitKey(0);
 		colourImg = cvCloneImage(frame);
 
 		if(!colourImg)
@@ -73,14 +77,16 @@ int main(){
 
 		cvCvtColor(difference, greyImg, CV_RGB2GRAY);
 
-		cvThreshold(greyImg, greyImg, 70, 255, CV_THRESH_BINARY);
+		cvThreshold(greyImg, greyImg, 38, 255, CV_THRESH_BINARY);
 
-		//cvErode(greyImg, greyImg, 0, 5);
-
-		cvDilate(greyImg, greyImg, 0, 18);
-		cvErode(greyImg, greyImg, 0, 10);
-
-		cvShowImage("Stock", greyImg);
+		cvShowImage("Threshold", greyImg);
+		cvErode(greyImg, greyImg, 0, 8);
+		cvShowImage("Erode 1", greyImg );
+		cvDilate(greyImg, greyImg, 0, 35);
+		cvShowImage("Dialate ", greyImg );
+//		cvErode(greyImg, greyImg, 0, 37);
+//		cvShowImage("Grey Image", greyImg);
+//		cvDilate(greyImg, greyImg, 0, 2);
 
 		CvMemStorage* storage = cvCreateMemStorage(0);
 		CvSeq* contour = 0;
@@ -101,7 +107,7 @@ int main(){
 
 
 		frame_count++;
-		char c = cvWaitKey(66);
+		char c = cvWaitKey(10);
 		if (c == 27) {
 			cvReleaseImage(&frame);
 			cvReleaseImage(&temp);
