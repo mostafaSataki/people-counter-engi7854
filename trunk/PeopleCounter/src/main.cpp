@@ -4,18 +4,12 @@
  *  Created on: 2011-07-20
  *      Author: Justin
  */
-#define BOOST_THREAD_USE_LIB
 
 #include <cv.h>
 #include <highgui.h>
 #include <cvaux.h>
-#include <imgproc/imgproc.hpp>
-#include <stdio.h>
 #include <iostream>
-#include <string>
-#include <sstream>
-#include <cstring>
-
+#include "massCenter.h"
 
 using namespace cv;
 
@@ -31,6 +25,7 @@ int main(){
 	//cvNamedWindow("Erode 1", CV_WINDOW_AUTOSIZE);
 	//cvNamedWindow("Dialate ", CV_WINDOW_AUTOSIZE);
 	cvNamedWindow("Modified", CV_WINDOW_AUTOSIZE);
+	std::vector<massCenter> centersList;
 	std::string filename = "";
 	//cin >> filename;
 	filename = "video2.avi";
@@ -72,13 +67,16 @@ int main(){
 
 	int frame_count = 0;
 	int avgY = 0;
+	int avgX = 0;
+	int currentListSize;
+	bool addNewCenter;
 	bool first = true;
 
 	int numPeople = 0;
 
 	while((frame = cvQueryFrame(fc)) != NULL){
 
-		//cvWaitKey(0);
+
 		colourImg = cvCloneImage(frame);
 
 		if(!colourImg)
@@ -121,8 +119,14 @@ int main(){
 		//		cvShowImage("Grey Image", greyImg);
 		//		cvDilate(greyImg, greyImg, 0, 2);
 
-		cvRectangle(colourImg, cvPoint(2, colourImg->height/2), cvPoint(colourImg->width, colourImg->height/2), CV_RGB(0,0,255),1);
+		cvRectangle(colourImg, cvPoint(2, colourImg->height/2), cvPoint(colourImg->width, (colourImg->height/2)-50), CV_RGB(255,0,0),1);
+		cvRectangle(colourImg, cvPoint(2, colourImg->height/2), cvPoint(colourImg->width, (colourImg->height/2)), CV_RGB(0,0,255),1);
 
+		for(int j=0; j<frame->height; j = j+50){
+			cvRectangle(colourImg, cvPoint(0,j), cvPoint(colourImg->width, j), CV_RGB(0,255,0),1);
+		}
+
+		cvRectangle(colourImg, cvPoint(2, colourImg->height/2), cvPoint(colourImg->width, (colourImg->height/2)+50), CV_RGB(255,0,0),1);
 		if(frame_count > 100){
 			CvMemStorage* storage = cvCreateMemStorage(0);
 			CvSeq* contour = 0;
@@ -136,9 +140,34 @@ int main(){
 				pt2.y = bndRect.y + bndRect.height;
 
 				avgY = (pt1.y+pt2.y)/2;
+				avgX = (pt1.x + pt2.x )/ 2;
 				cvRectangle(colourImg, pt1, pt2, CV_RGB(255,0,0), 1);
 				cvCircle(colourImg, cvPoint((pt1.x+pt2.x)/2, avgY), 5, CV_RGB(0, 255, 0)), 2;
 
+				if(centersList.size() == 0){
+					centersList.push_back(*(new massCenter(avgX,avgY)));
+				}
+				else{
+					//record the current size of the list, as new items may be added to the list
+					currentListSize = centersList.size();
+					addNewCenter = true;
+
+					for(int i=0;i<currentListSize;i++){
+						if ( (avgY > (centersList[i].lasty -37))  && (avgY < (centersList[i].lasty + 37)) ){
+							if ( (avgX > (centersList[i].lastx -28)) && (avgX < (centersList[i].lastx + 28)) ) {
+								centersList[i].prevX.push_back(centersList[i].lastx);
+								centersList[i].prevY.push_back(centersList[i].lasty);
+								centersList[i].lastx = avgX;
+								centersList[i].lasty = avgY;
+								addNewCenter = false;
+								std::cout<<"Updated! Centers List " << i << "\n";
+							}
+						}
+					}
+					if(addNewCenter == true){
+						centersList.push_back(*(new massCenter(avgX,avgY)));
+					}
+				}
 
 				cvGoodFeaturesToTrack(prevFrame, eig_image, tmp_image, cornersA, &corner_count, 0.01, 5.0, 0, 3, 0, 0.04);
 				cvFindCornerSubPix(prevFrame, cornersA, corner_count, cvSize(win_size, win_size), cvSize(-1, -1), cvTermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 20, 0.03));
@@ -170,13 +199,37 @@ int main(){
 					);
 					cvLine( colourImg, p0, p1, CV_RGB(255,0,0),2 );
 
-//				IplImage *velx = cvCreateImage(cvGetSize(frame), IPL_DEPTH_32F, 1);
-//				IplImage *vely = cvCreateImage(cvGetSize(frame), IPL_DEPTH_32F, 1);
-//
-//				cvCalcOpticalFlowLK(prevFrame, greyImg, cvSize(10,10), velx, vely);
-//				cvWaitKey(0);
-//				cvShowImage("velx", velx);
-//				cvShowImage("vely", vely);
+					//				IplImage *velx = cvCreateImage(cvGetSize(frame), IPL_DEPTH_32F, 1);
+					//				IplImage *vely = cvCreateImage(cvGetSize(frame), IPL_DEPTH_32F, 1);
+					//
+					//				cvCalcOpticalFlowLK(prevFrame, greyImg, cvSize(10,10), velx, vely);
+					//				cvWaitKey(0);
+					//				cvShowImage("velx", velx);
+					//				cvShowImage("vely", vely);
+				}
+			}
+		}
+
+		//check for couting
+		if(centersList.size() != 0){
+			for(int i = 0; i<centersList.size(); i++){
+				if( centersList[i].prevY.size() >= 2){
+					if(centersList[i].checkNeg){
+						if( (centersList[i].lasty > (frame->height/2)) && (centersList[i].lasty < ((frame->height/2)+50))){
+							if( (centersList[i].prevY[centersList[i].prevY.size()-1] < (frame->height/2))  &&  ( centersList[i].prevY[centersList[i].prevY.size()-1] > ((frame->height/2)-50))){
+								numPeople--;
+								centersList[i].checkNeg = false;
+							}
+						}
+					}
+					if(centersList[i].checkPos){
+						if( (centersList[i].lasty < (frame->height/2)) && (centersList[i].lasty > ((frame->height/2)-50))){
+							if( (centersList[i].prevY[centersList[i].prevY.size()-1] > (frame->height/2))  &&  ( centersList[i].prevY[centersList[i].prevY.size()-1] < ((frame->height/2)+50))){
+								numPeople++;
+								centersList[i].checkPos = false;
+							}
+						}
+					}
 				}
 			}
 		}
@@ -191,7 +244,8 @@ int main(){
 
 		prevFrame = cvCloneImage(greyImg);
 		frame_count++;
-		char c = cvWaitKey(132);
+		cvWaitKey(0);
+		char c = cvWaitKey(50);
 		if (c == 27) {
 			cvReleaseImage(&frame);
 			//cvReleaseImage(&temp);
@@ -207,6 +261,8 @@ int main(){
 		}
 	}
 }
+
+
 
 //void detectBody(IplImage* img)
 //{
