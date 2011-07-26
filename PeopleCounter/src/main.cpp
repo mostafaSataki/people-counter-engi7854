@@ -102,31 +102,33 @@ int main(){
 		//cvShowImage("Threshold", greyImg);
 		cvErode(greyImg, greyImg, 0, 6);//6
 		//cvShowImage("Erode 1", greyImg );
-		cvDilate(greyImg, greyImg, 0, 26);//33
+		cvDilate(greyImg, greyImg, 0, 33);//33
 		//cvShowImage("Dialate ", greyImg );
-		cvErode(greyImg, greyImg, 0, 18);//6
+		cvErode(greyImg, greyImg, 0, 6);//6
 		//cvShowImage("Grey Image", greyImg);
-		cvDilate(greyImg, greyImg, 0, 2);
-
+		//cvDilate(greyImg, greyImg, 0, 2);
 
 
 		//cvShowImage("Threshold", greyImg);
-		cvErode(greyImg, greyImg, 0, 8);
+		//cvErode(greyImg, greyImg, 0, 8);
 		//cvShowImage("Erode 1", greyImg );
-		cvDilate(greyImg, greyImg, 0, 35);
+		//cvDilate(greyImg, greyImg, 0, 35);
 		//cvShowImage("Dialate ", greyImg );
 		//		cvErode(greyImg, greyImg, 0, 37);
 		//		cvShowImage("Grey Image", greyImg);
 		//		cvDilate(greyImg, greyImg, 0, 2);
 
-		cvRectangle(colourImg, cvPoint(2, colourImg->height/2), cvPoint(colourImg->width, (colourImg->height/2)-50), CV_RGB(255,0,0),1);
-		cvRectangle(colourImg, cvPoint(2, colourImg->height/2), cvPoint(colourImg->width, (colourImg->height/2)), CV_RGB(0,0,255),1);
-
-		for(int j=0; j<frame->height; j = j+50){
-			cvRectangle(colourImg, cvPoint(0,j), cvPoint(colourImg->width, j), CV_RGB(0,255,0),1);
+		cvLine(colourImg, cvPoint(2, (colourImg->height/2)-50), cvPoint(colourImg->width, (colourImg->height/2)-50), CV_RGB(255,0,0),2,CV_AA);
+		cvLine(colourImg, cvPoint(2, colourImg->height/2), cvPoint(colourImg->width, (colourImg->height/2)), CV_RGB(0,0,255),2,CV_AA);
+		cvLine(colourImg, cvPoint(2, (colourImg->height/2)+50), cvPoint(colourImg->width, (colourImg->height/2)+50), CV_RGB(255,0,0),2,CV_AA);
+		for(int j=frame->height/2; j<frame->height; j = j+50){
+			cvLine(colourImg, cvPoint(0,j), cvPoint(colourImg->width, j), CV_RGB(0,255,0),1);
+		}
+		for(int j = frame->height/2; j>=0; j = j-50){
+			cvLine(colourImg, cvPoint(0,j), cvPoint(colourImg->width, j), CV_RGB(0,255,0),1);
 		}
 
-		cvRectangle(colourImg, cvPoint(2, colourImg->height/2), cvPoint(colourImg->width, (colourImg->height/2)+50), CV_RGB(255,0,0),1);
+
 		if(frame_count > 100){
 			CvMemStorage* storage = cvCreateMemStorage(0);
 			CvSeq* contour = 0;
@@ -153,14 +155,14 @@ int main(){
 					addNewCenter = true;
 
 					for(int i=0;i<currentListSize;i++){
-						if ( (avgY > (centersList[i].lasty -37))  && (avgY < (centersList[i].lasty + 37)) ){
-							if ( (avgX > (centersList[i].lastx -28)) && (avgX < (centersList[i].lastx + 28)) ) {
+						if ( (avgY > (centersList[i].lasty -70))  && (avgY < (centersList[i].lasty + 70)) ){
+							if ( (avgX > (centersList[i].lastx -55)) && (avgX < (centersList[i].lastx + 55)) ) {
 								centersList[i].prevX.push_back(centersList[i].lastx);
 								centersList[i].prevY.push_back(centersList[i].lasty);
 								centersList[i].lastx = avgX;
 								centersList[i].lasty = avgY;
 								addNewCenter = false;
-								std::cout<<"Updated! Centers List " << i << "\n";
+								//std::cout<<"Updated! Centers List " << i << "\n";
 							}
 						}
 					}
@@ -215,16 +217,16 @@ int main(){
 			for(int i = 0; i<centersList.size(); i++){
 				if( centersList[i].prevY.size() >= 2){
 					if(centersList[i].checkNeg){
-						if( (centersList[i].lasty > (frame->height/2)) && (centersList[i].lasty < ((frame->height/2)+50))){
-							if( (centersList[i].prevY[centersList[i].prevY.size()-1] < (frame->height/2))  &&  ( centersList[i].prevY[centersList[i].prevY.size()-1] > ((frame->height/2)-50))){
+						if( (centersList[i].lasty > (frame->height/2)) && (centersList[i].lasty < ((frame->height/2)+30))){
+							if( (centersList[i].prevY[centersList[i].prevY.size()-1] < (frame->height/2))  &&  ( centersList[i].prevY[centersList[i].prevY.size()-1] > ((frame->height/2)-30))){
 								numPeople--;
 								centersList[i].checkNeg = false;
 							}
 						}
 					}
 					if(centersList[i].checkPos){
-						if( (centersList[i].lasty < (frame->height/2)) && (centersList[i].lasty > ((frame->height/2)-50))){
-							if( (centersList[i].prevY[centersList[i].prevY.size()-1] > (frame->height/2))  &&  ( centersList[i].prevY[centersList[i].prevY.size()-1] < ((frame->height/2)+50))){
+						if( (centersList[i].lasty < (frame->height/2)) && (centersList[i].lasty > ((frame->height/2)-30))){
+							if( (centersList[i].prevY[centersList[i].prevY.size()-1] > (frame->height/2))  &&  ( centersList[i].prevY[centersList[i].prevY.size()-1] < ((frame->height/2)+30))){
 								numPeople++;
 								centersList[i].checkPos = false;
 							}
