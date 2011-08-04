@@ -20,113 +20,125 @@ CvMemStorage *ms;
 void detectBody(IplImage *img);
 
 int main(){
-	//cvNamedWindow("Grey Image", CV_WINDOW_AUTOSIZE);
-	//cvNamedWindow("Threshold", CV_WINDOW_AUTOSIZE);
-	//cvNamedWindow("Erode 1", CV_WINDOW_AUTOSIZE);
-	//cvNamedWindow("Dialate ", CV_WINDOW_AUTOSIZE);
+	// main program window
 	cvNamedWindow("Modified", CV_WINDOW_AUTOSIZE);
+	// vector to store object centers
 	std::vector<massCenter> centersList;
+	// create a blank string to hold filename
 	std::string filename = "";
-	//cin >> filename;
-	filename = "video2.avi";
+	// assign the file name, no path indicates same location as .exe, absolute path is also acceptable
+	filename = "video6.avi";
+	// create the frame capture tool for grabing frame from a file
 	CvCapture *fc = cvCreateFileCapture(filename.c_str());
 
+	// check to see the capture was created
 	if(!fc)
 		return 0;
 
+	// Load a frame from the capture tool
 	IplImage* frame = cvQueryFrame(fc);
 
+	//check to see if the frame was loaded
 	if (!frame) {
 		return 0;
 	}
 
+	//holder images for image function below
 	IplImage* greyImg = cvCreateImage(cvGetSize(frame), IPL_DEPTH_8U, 1);
 	IplImage* colourImg;
 	IplImage* movingAverage = cvCreateImage(cvGetSize(frame), IPL_DEPTH_32F, 3);
 	IplImage* difference;
 	IplImage* temp;
-
-	//	std::string filename2 = "haarcascade_upperbody.xml";
-	//	cascade = (CvHaarClassifierCascade*)cvLoad(filename2.c_str(), 0, 0, 0);
-	//	ms = cvCreateMemStorage(0);
-
-
 	IplImage* prevFrame = cvCreateImage(cvGetSize(frame), IPL_DEPTH_8U, 1);
 	IplImage* eig_image = cvCreateImage(cvGetSize(frame), IPL_DEPTH_32F, 1);
 	IplImage* tmp_image = cvCreateImage(cvGetSize(frame), IPL_DEPTH_32F, 1);
+
+	// set a max corer for optical flow, 500 corners able to be tracked at one time
 	int corner_count = 500;
+
+	// corner points array
 	CvPoint2D32f *cornersA = new CvPoint2D32f[corner_count];
 	int win_size = 10;
 
+	//Initialise a bounding box to be used later
 	CvRect bndRect = cvRect(0,0,0,0);
 
+	// initialise two points for use later
 	CvPoint pt1, pt2;
 
+	// initialise a font for using text later
 	CvFont font;
 	char buf[65];
 
+	//initiaise frame count
 	int frame_count = 0;
+
+	//variables used later in the bounding rects
 	int avgY = 0;
 	int avgX = 0;
+
+	// current size of bounding rects
 	int currentListSize;
+
+	//bool to tell the program if a new blob has been hadded
 	bool addNewCenter;
+
+	// bool to tell the program it is thefirst run through
 	bool first = true;
 
+	//initialize the number of people to 0
 	int numPeople = 0;
 
+	//while there is a frame to capture
 	while((frame = cvQueryFrame(fc)) != NULL){
-
 
 		colourImg = cvCloneImage(frame);
 
+		//ensure the colorImg was cloned properly
 		if(!colourImg)
 			return 0;
 
-
+		//compute the initial image to use in runing average
 		if(first){
 			difference = cvCloneImage(colourImg);
 			temp = cvCloneImage(colourImg);
 			cvConvertScale(colourImg, movingAverage, 1.0, 0.0);
 			first = false;
 		}else{
+			//consistantly adjust the running avg of the background
 			cvRunningAvg(colourImg, movingAverage, 0.020, NULL);
 		}
 
+
 		cvConvertScale(movingAverage, temp, 1.0, 0.0);
-
+		//take absolute difference between current frame and saved background
 		cvAbsDiff(colourImg, temp, difference);
-
+		//convert the frame to greylevels
 		cvCvtColor(difference, greyImg, CV_RGB2GRAY);
-
+		//threshold image
 		cvThreshold(greyImg, greyImg, 38, 255, CV_THRESH_BINARY);
-		//cvShowImage("Threshold", greyImg);
+		//erode to remove small objects
 		cvErode(greyImg, greyImg, 0, 6);//6
-		//cvShowImage("Erode 1", greyImg );
+		//dilate re-expand original objects and merge near by objects
 		cvDilate(greyImg, greyImg, 0, 33);//33
-		//cvShowImage("Dialate ", greyImg );
+		//erode to make new objects smaller
 		cvErode(greyImg, greyImg, 0, 6);//6
-		//cvShowImage("Grey Image", greyImg);
-		//cvDilate(greyImg, greyImg, 0, 2);
 
-
-		//cvShowImage("Threshold", greyImg);
-		//cvErode(greyImg, greyImg, 0, 8);
-		//cvShowImage("Erode 1", greyImg );
-		//cvDilate(greyImg, greyImg, 0, 35);
-		//cvShowImage("Dialate ", greyImg );
-		//		cvErode(greyImg, greyImg, 0, 37);
-		//		cvShowImage("Grey Image", greyImg);
-		//		cvDilate(greyImg, greyImg, 0, 2);
-
+		//red line -50Pixels from center
 		cvLine(colourImg, cvPoint(2, (colourImg->height/2)-50), cvPoint(colourImg->width, (colourImg->height/2)-50), CV_RGB(255,0,0),2,CV_AA);
+		//blue line at frame center
 		cvLine(colourImg, cvPoint(2, colourImg->height/2), cvPoint(colourImg->width, (colourImg->height/2)), CV_RGB(0,0,255),2,CV_AA);
+		//red line +50Pixels from center
 		cvLine(colourImg, cvPoint(2, (colourImg->height/2)+50), cvPoint(colourImg->width, (colourImg->height/2)+50), CV_RGB(255,0,0),2,CV_AA);
-		for(int j=frame->height/2; j<frame->height; j = j+50){
-			cvLine(colourImg, cvPoint(0,j), cvPoint(colourImg->width, j), CV_RGB(0,255,0),1);
-		}
-		for(int j = frame->height/2; j>=0; j = j-50){
-			cvLine(colourImg, cvPoint(0,j), cvPoint(colourImg->width, j), CV_RGB(0,255,0),1);
-		}
+
+
+//Remove these comments to add green lines every +- 50 pixals from center of video
+//		for(int j=frame->height/2; j<frame->height; j = j+50){
+//			cvLine(colourImg, cvPoint(0,j), cvPoint(colourImg->width, j), CV_RGB(0,255,0),1);
+//		}
+//		for(int j = frame->height/2; j>=0; j = j-50){
+//			cvLine(colourImg, cvPoint(0,j), cvPoint(colourImg->width, j), CV_RGB(0,255,0),1);
+//		}
 
 
 		if(frame_count > 100){
@@ -154,6 +166,7 @@ int main(){
 					currentListSize = centersList.size();
 					addNewCenter = true;
 
+					//update objects, objects within rangeare the same object, else it is a new object
 					for(int i=0;i<currentListSize;i++){
 						if ( (avgY > (centersList[i].lasty -70))  && (avgY < (centersList[i].lasty + 70)) ){
 							if ( (avgX > (centersList[i].lastx -55)) && (avgX < (centersList[i].lastx + 55)) ) {
@@ -182,32 +195,22 @@ int main(){
 
 				CvPoint2D32f *cornersB = new CvPoint2D32f[500];
 
-				cvSetImageROI(prevFrame, cvRect(0, 50, frame->width, frame->height-50));
-				cvSetImageROI(greyImg, cvRect(0, 50, frame->width, frame->height-50));
 				cvCalcOpticalFlowPyrLK(prevFrame, greyImg, pyrA, pyrB, cornersA, cornersB, corner_count, cvSize(win_size, win_size), 5, features_found, feature_errors, cvTermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 20, 0.3), 0);
-				cvResetImageROI(prevFrame);
-				cvResetImageROI(greyImg);
 
 				for(int i = 0; i < corner_count; i++){
-					if(features_found[i] == 0 || feature_errors[i] > 1000)
-						continue;
 					CvPoint p0 = cvPoint(
 							cvRound( cornersA[i].x ),
 							cvRound( cornersA[i].y )
 					);
+					cvPutText(colourImg, _itoa(0, buf, 10),p0, &font, cvScalar(0,0,300));
+
 					CvPoint p1 = cvPoint(
 							cvRound( cornersB[i].x ),
 							cvRound( cornersB[i].y )
 					);
-					cvLine( colourImg, p0, p1, CV_RGB(255,0,0),2 );
+					cvPutText(colourImg, _itoa(1, buf, 10),p1, &font, cvScalar(0,0,300));
 
-					//				IplImage *velx = cvCreateImage(cvGetSize(frame), IPL_DEPTH_32F, 1);
-					//				IplImage *vely = cvCreateImage(cvGetSize(frame), IPL_DEPTH_32F, 1);
-					//
-					//				cvCalcOpticalFlowLK(prevFrame, greyImg, cvSize(10,10), velx, vely);
-					//				cvWaitKey(0);
-					//				cvShowImage("velx", velx);
-					//				cvShowImage("vely", vely);
+					cvLine( colourImg, p0, p1, CV_RGB(255,0,0),2 );
 				}
 			}
 		}
@@ -239,44 +242,19 @@ int main(){
 		cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.2, 1.2, 1, 2);
 		cvPutText(colourImg, _itoa(numPeople, buf, 10), cvPoint(20, 20), &font, cvScalar(0,0,300));
 
+		//display the frame
 		cvShowImage("Modified", colourImg);
-
-		//		if(frame_count > 100)
-		//			detectBody(frame);
 
 		prevFrame = cvCloneImage(greyImg);
 		frame_count++;
 		cvWaitKey(0);
 		char c = cvWaitKey(50);
+		//if esc is pressed, clean up and exit
 		if (c == 27) {
 			cvReleaseImage(&frame);
-			//cvReleaseImage(&temp);
-			//cvReleaseImage(&difference);
-			//cvReleaseImage(&greyImg);
-			//cvReleaseImage(&movingAverage);
-
 			cvReleaseCapture(&fc);
-
-			//cvDestroyWindow("Stock");
 			cvDestroyWindow("Modified");
 			return 0;
 		}
 	}
 }
-
-
-
-//void detectBody(IplImage* img)
-//{
-//	IplImage* greyImg = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
-//	int i;
-//	cvClearMemStorage(ms);
-//	CvSeq *bodies;
-//	cvCvtColor(img, greyImg, CV_RGB2GRAY);
-//	bodies = cvHaarDetectObjects(greyImg, cascade, ms, 1.3, 3, 0, cvSize(40, 100));
-//	for(i = 0; i < (bodies ? bodies->total : 0); i++){
-//		CvRect *r = (CvRect*)cvGetSeqElem(bodies, i);
-//		cvRectangle(img, cvPoint(r->x, r->y),cvPoint( r->x + r->width, r->y + r->height), CV_RGB(255, 0, 0), 1, 8, 0);
-//		cvShowImage("Modified", img);
-//	}
-//}
