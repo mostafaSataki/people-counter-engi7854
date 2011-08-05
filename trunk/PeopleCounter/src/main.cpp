@@ -56,7 +56,7 @@ int main(){
 	// set a max corer for optical flow, 500 corners able to be tracked at one time
 	int corner_count = 500;
 
-	// corner points array
+	// corner points array for optical flow
 	CvPoint2D32f *cornersA = new CvPoint2D32f[corner_count];
 	int win_size = 10;
 
@@ -140,24 +140,30 @@ int main(){
 //			cvLine(colourImg, cvPoint(0,j), cvPoint(colourImg->width, j), CV_RGB(0,255,0),1);
 //		}
 
-
+		//Don't contour track for the 100 frame setup period
 		if(frame_count > 100){
+			//Memory to use for finding/storing contours
 			CvMemStorage* storage = cvCreateMemStorage(0);
+			//Sequences are linked lists of structures. They will be used to store lists of points in each contour.
 			CvSeq* contour = 0;
+			//Find the contours and store them in a CCOMP structure, approximating to points from chain code
 			cvFindContours(greyImg, storage, &contour, sizeof(CvContour), CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
-
+			//For every contour
 			for(;contour != 0; contour = contour->h_next){
+				//Get the bounding rectangle
 				bndRect = cvBoundingRect(contour, 0);
 				pt1.x = bndRect.x;
 				pt1.y = bndRect.y;
 				pt2.x = bndRect.x + bndRect.width;
 				pt2.y = bndRect.y + bndRect.height;
-
+				//Calculate its center
 				avgY = (pt1.y+pt2.y)/2;
 				avgX = (pt1.x + pt2.x )/ 2;
+				//Draw the rectangle and center
 				cvRectangle(colourImg, pt1, pt2, CV_RGB(255,0,0), 1);
 				cvCircle(colourImg, cvPoint((pt1.x+pt2.x)/2, avgY), 5, CV_RGB(0, 255, 0)), 2;
 
+				//If its a new list
 				if(centersList.size() == 0){
 					centersList.push_back(*(new massCenter(avgX,avgY)));
 				}
@@ -166,7 +172,7 @@ int main(){
 					currentListSize = centersList.size();
 					addNewCenter = true;
 
-					//update objects, objects within rangeare the same object, else it is a new object
+					//update objects, objects within range are the same object, else it is a new object
 					for(int i=0;i<currentListSize;i++){
 						if ( (avgY > (centersList[i].lasty -70))  && (avgY < (centersList[i].lasty + 70)) ){
 							if ( (avgX > (centersList[i].lastx -55)) && (avgX < (centersList[i].lastx + 55)) ) {
@@ -183,12 +189,14 @@ int main(){
 						centersList.push_back(*(new massCenter(avgX,avgY)));
 					}
 				}
-
+				//Finds good features to track, which are corners and areas of high contrast/color range
 				cvGoodFeaturesToTrack(prevFrame, eig_image, tmp_image, cornersA, &corner_count, 0.01, 5.0, 0, 3, 0, 0.04);
+				//Find corners to a subpixel accuracy
 				cvFindCornerSubPix(prevFrame, cornersA, corner_count, cvSize(win_size, win_size), cvSize(-1, -1), cvTermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 20, 0.03));
 				char features_found[500];
 				float feature_errors[500];
 
+				//O'Reilly recommends the pyrmidal method of optical flow, this algorithm was extrapolated from that.
 				CvSize pyr_sz = cvSize(frame->width+8, frame->height/3);
 				IplImage *pyrA = cvCreateImage(pyr_sz, IPL_DEPTH_32F, 1);
 				IplImage *pyrB = cvCreateImage(pyr_sz, IPL_DEPTH_32F, 1);
@@ -197,6 +205,9 @@ int main(){
 
 				cvCalcOpticalFlowPyrLK(prevFrame, greyImg, pyrA, pyrB, cornersA, cornersB, corner_count, cvSize(win_size, win_size), 5, features_found, feature_errors, cvTermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 20, 0.3), 0);
 
+				//Here, all the flows are found and averaged, then a single line is drawn.
+
+				/*** COMMENT FROM HERE TO NEXT COMMENT TO NOT DISPLAY OPTICAL FLOW SINCE ITS NOT ACTUALLY USED ***/
 				for(int i = 0; i < corner_count; i++){
 					CvPoint p0 = cvPoint(
 							cvRound( cornersA[i].x ),
@@ -212,6 +223,7 @@ int main(){
 
 					cvLine( colourImg, p0, p1, CV_RGB(255,0,0),2 );
 				}
+				/*** STOP COMMENTING STUFF OUT NOW ***/
 			}
 		}
 
@@ -239,6 +251,7 @@ int main(){
 			}
 		}
 
+		//Draw the count to the top left corner
 		cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1.2, 1.2, 1, 2);
 		cvPutText(colourImg, _itoa(numPeople, buf, 10), cvPoint(20, 20), &font, cvScalar(0,0,300));
 
@@ -247,7 +260,8 @@ int main(){
 
 		prevFrame = cvCloneImage(greyImg);
 		frame_count++;
-		cvWaitKey(0);
+		//Uncomment below for stepping mode
+		//cvWaitKey(0);
 		char c = cvWaitKey(50);
 		//if esc is pressed, clean up and exit
 		if (c == 27) {
